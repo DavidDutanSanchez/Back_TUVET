@@ -1,3 +1,71 @@
+## Archivos y carpetas de compilación
+bin/
+obj/
+[Bb]uild/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+## Configuración de usuario y entorno
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Archivos temporales
+*.swp
+*.tmp
+*.temp
+*.bak
+*.log
+
+## Archivos de sistema
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## Archivos de publicación y distribución
+publish/
+dist/
+node_modules/
+.env
+.env.*
+
+## Archivos de configuración local
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+
+## Archivos de herramientas
+*.vscode/
+.vscode/
+.idea/
+*.ncrunchsolution
+*.ncrunchproject
+
+## Archivos de NuGet
+*.nupkg
+*.snupkg
+*.nuspec
+*.nuget.props
+*.nuget.targets
+*.lock.json
+
+## Archivos de cobertura y análisis
+*.coverage
+*.coveragexml
+TestResults/
+*.trx
+*.codecoverage
+*.sonarqube/
 # Logs
 logs
 *.log
