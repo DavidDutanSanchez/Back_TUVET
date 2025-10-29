@@ -6,6 +6,7 @@ namespace tu_vet_back.tuvet.Model.TuVet
         public string NombreUsuario { get; set; } = string.Empty;
         public byte[] Contrasenia { get; set; } = null!;
         public string Permisos { get; set; } = string.Empty;
+        public bool Estado { get; set; } = true;
         public Guid Id_Persona { get; set; } = Guid.NewGuid();
         public virtual Personas? Persona { get; set; } = null!;
     }
