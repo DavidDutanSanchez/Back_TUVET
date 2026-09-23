@@ -1,50 +1,168 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 using tu_vet_back.tuvet.Dtos;
 using tu_vet_back.tuvet.Dtos.TuVetDto;
 using tu_vet_back.tuvet.Interface;
 using tu_vet_back.tuvet.Model.Parameters;
-using tu_vet_back.tuvet.Model.TuVet;
 
 namespace tu_vet_back.tuvet.Controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ControladorUsuarios(IControladorUsuario usuarioService) : SistecControllerBase
+    public class ControladorUsuarios(
+        IControladorUsuario usuarioService
+    ) : SistecControllerBase
     {
-        private readonly IControladorUsuario _usuariosService = usuarioService;
+        private readonly IControladorUsuario
+            _usuariosService = usuarioService;
 
-        //CRUD Usuarios
+
+        // =====================================================
+        // LISTAR USUARIOS
+        // =====================================================
+
         [HttpGet("FindAllUsuarios")]
-        public async Task<ActionResult<PaginationDto<Servicios>>> FindAllUsuarios([FromQuery] QueryParams qParams)
+        public async Task<
+            ActionResult<
+                PaginationDto<UsuarioListadoDto>
+            >
+        > FindAllUsuarios(
+            [FromQuery] QueryParams qParams
+        )
         {
-            PaginationDto<Usuarios> pagedResult = await _usuariosService.AllUsuarios(qParams);
+            var pagedResult =
+                await _usuariosService
+                    .AllUsuarios(qParams);
+
+
             return Ok(pagedResult);
         }
+
+
+        // =====================================================
+        // CREAR USUARIO
+        // =====================================================
+
         [HttpPut("AddUsuario")]
-        public async Task<IActionResult> AddUsuario([FromBody] Usuarios usuarios)
+        public async Task<IActionResult>
+            AddUsuario(
+                [FromBody]
+                UsuarioCreateDto usuario
+            )
         {
-            string response = await _usuariosService.CreateUsuario(usuarios);
-            return response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response);
+            var response =
+                await _usuariosService
+                    .CreateUsuario(
+                        usuario
+                    );
+
+
+            return response == "Realizado"
+                ? Ok(response)
+                : BadRequest(response);
         }
+
+
+        // =====================================================
+        // ACTUALIZAR USUARIO
+        // =====================================================
+
         [HttpPost("UpdateUsuarios")]
-        public async Task<ActionResult> UpdateUsuarios([FromBody] Usuarios usuarios)
+        public async Task<IActionResult>
+            UpdateUsuarios(
+                [FromBody]
+                UsuarioUpdateDto usuario
+            )
         {
-            string response = await _usuariosService.UpdateUsuario(usuarios);
-            return (ActionResult)(response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response));
+            var response =
+                await _usuariosService
+                    .UpdateUsuario(
+                        usuario
+                    );
+
+
+            return response == "Realizado"
+                ? Ok(response)
+                : BadRequest(response);
         }
+
+
+        // =====================================================
+        // DESACTIVAR USUARIO
+        // =====================================================
 
         [HttpDelete("DeleteUsuarios/{id}")]
-        public async Task<ActionResult> DeleteUsuarios([FromRoute] Guid id)
+        public async Task<IActionResult>
+            DeleteUsuarios(
+                [FromRoute] Guid id
+            )
         {
-            string response = await _usuariosService.DeleteUsuario(id);
-            return (ActionResult)(response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response));
-        }
-        [HttpPost("IniciarSession")]
-        public async Task<ActionResult> IniciarSession([FromQuery] byte[] clave, [FromQuery] string usuario)
-        {
-            UsuarioDto? response = await _usuariosService.IniciarSession(usuario, clave);
-            return (ActionResult)(response == null ? Ok(response) : (IActionResult)InternalServerError("Error, usuario o contraseña equivocado"));
+            var response =
+                await _usuariosService
+                    .DeleteUsuario(
+                        id
+                    );
+
+
+            return response == "Realizado"
+                ? Ok(response)
+                : BadRequest(response);
         }
 
+
+        // =====================================================
+        // INICIAR SESIÓN
+        // =====================================================
+
+        [HttpPost("IniciarSession")]
+        public async Task<IActionResult>
+            IniciarSession(
+                [FromQuery]
+                string usuario,
+
+                [FromQuery]
+                string clave
+            )
+        {
+            if (
+                string.IsNullOrWhiteSpace(
+                    usuario
+                )
+                ||
+                string.IsNullOrWhiteSpace(
+                    clave
+                )
+            )
+            {
+                return BadRequest(
+                    "Debe ingresar usuario y contraseña."
+                );
+            }
+
+
+            var claveBytes =
+                Encoding.UTF8.GetBytes(
+                    clave
+                );
+
+
+            var response =
+                await _usuariosService
+                    .IniciarSession(
+                        usuario,
+                        claveBytes
+                    );
+
+
+            if (response == null)
+            {
+                return Unauthorized(
+                    "Usuario o contraseña incorrectos."
+                );
+            }
+
+
+            return Ok(response);
+        }
     }
 }

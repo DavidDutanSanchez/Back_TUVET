@@ -1,4 +1,3 @@
-
 using tu_vet_back.tuvet.Context;
 using tu_vet_back.tuvet.Dtos;
 using tu_vet_back.tuvet.Extensions;
@@ -12,66 +11,165 @@ namespace tu_vet_back.tuvet.Service
     {
         private readonly TuVetContext _context = context;
 
-        public async Task<PaginationDto<Personas>> AllPersonas(QueryParams qParams)
+
+        // =====================================================
+        // OBTENER TODAS LAS PERSONAS
+        // =====================================================
+        public async Task<PaginationDto<Personas>> AllPersonas(
+            QueryParams qParams
+        )
         {
             try
             {
-                PaginationDto<Personas> personas = await _context.Personas
-                .OrderBy(c => c.Apellidos)
-                .ApplySearch(qParams.search, t => t.Nombres, t => t.Apellidos, t => t.NumeroIdentificacion)
-                .OrderBy(qParams.orderBy ?? nameof(Personas.Apellidos), qParams.isOrderByDescending)
-                .GetPagedAsync(qParams);
+                var campoOrdenamiento =
+                    ResolverCampoOrdenamiento(qParams.orderBy);
+
+                var personas = await _context.Personas
+
+                    .ApplySearch(
+                        qParams.search,
+                        p => p.Nombres,
+                        p => p.Apellidos,
+                        p => p.NumeroIdentificacion
+                    )
+
+                    .OrderBy(
+                        campoOrdenamiento,
+                        qParams.isOrderByDescending
+                    )
+
+                    .GetPagedAsync(qParams);
+
                 return personas;
             }
-            catch (Exception ex)
+            catch
             {
-                throw new Exception(ex.InnerException?.Message + " mensaje: " + ex.Message);
+                throw;
             }
         }
-        public async Task<string> CreatePersona(Personas personas)
+
+
+        // =====================================================
+        // CREAR PERSONA
+        // =====================================================
+        public async Task<string> CreatePersona(
+            Personas personas
+        )
         {
-            string response = "Realizado";
             try
             {
-                _ = _context.Personas.Add(personas);
-                _ = await _context.SaveChangesAsync();
+                _context.Personas.Add(personas);
+
+                await _context.SaveChangesAsync();
+
+                return "Realizado";
             }
             catch (Exception ex)
             {
-                response = ex.InnerException?.Message + "Mensaje : " + ex.Message;
-                return response;
+                return ex.InnerException?.Message
+                    ?? ex.Message;
             }
-            return response;
         }
-        public async Task<string> DeletePersona(Guid iD)
+
+
+        // =====================================================
+        // ACTUALIZAR PERSONA
+        // =====================================================
+        public async Task<string> UpdatePersona(
+            Personas personas
+        )
         {
-            string response = "Realizado";
             try
             {
-                _ = _context.Personas.Remove(_context.Personas.Where(x => x.IdPersona == iD).First());
-                _ = await _context.SaveChangesAsync();
+                _context.Personas.Update(personas);
+
+                await _context.SaveChangesAsync();
+
+                return "Realizado";
             }
             catch (Exception ex)
             {
-                response = ex.InnerException?.Message + "Mensaje : " + ex.Message;
-                return response;
+                return ex.InnerException?.Message
+                    ?? ex.Message;
             }
-            return response;
         }
-        public async Task<string> UpdatePersona(Personas personas)
+
+
+        // =====================================================
+        // ELIMINAR PERSONA
+        // =====================================================
+        public async Task<string> DeletePersona(
+            Guid id
+        )
         {
-            string response = "Realizado";
             try
             {
-                _ = _context.Personas.Update(personas);
-                _ = await _context.SaveChangesAsync();
+                var persona =
+                    await _context.Personas.FindAsync(id);
+
+                if (persona == null)
+                {
+                    return "La persona no existe.";
+                }
+
+                _context.Personas.Remove(persona);
+
+                await _context.SaveChangesAsync();
+
+                return "Realizado";
             }
             catch (Exception ex)
             {
-                response = ex.InnerException?.Message + "Mensaje : " + ex.Message;
-                return response;
+                return ex.InnerException?.Message
+                    ?? ex.Message;
             }
-            return response;
+        }
+
+
+        // =====================================================
+        // RESOLVER CAMPO DE ORDENAMIENTO
+        // =====================================================
+        private static string ResolverCampoOrdenamiento(
+            string? orderBy
+        )
+        {
+            if (string.IsNullOrWhiteSpace(orderBy))
+            {
+                return nameof(Personas.Apellidos);
+            }
+
+            return orderBy.Trim().ToLowerInvariant() switch
+            {
+                "idpersona" =>
+                    nameof(Personas.IdPersona),
+
+                "tipoidentificacion" =>
+                    nameof(Personas.TipoIdentificacion),
+
+                "numeroidentificacion" =>
+                    nameof(Personas.NumeroIdentificacion),
+
+                "nombres" =>
+                    nameof(Personas.Nombres),
+
+                "apellidos" =>
+                    nameof(Personas.Apellidos),
+
+                "tipotelefono" =>
+                    nameof(Personas.TipoTelefono),
+
+                "telefono" =>
+                    nameof(Personas.Telefono),
+
+                "correoelectronico" =>
+                    nameof(Personas.CorreoElectronico),
+
+                "direccion" =>
+                    nameof(Personas.Direccion),
+
+                _ =>
+                    nameof(Personas.Apellidos)
+            };
         }
     }
 }

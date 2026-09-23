@@ -8,35 +8,87 @@ namespace tu_vet_back.tuvet.Controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ControladorColores(IControladorColores coloresService) : SistecControllerBase
+    public class ControladorColores(
+        IControladorColores coloresService
+    ) : SistecControllerBase
     {
-         private readonly IControladorColores _coloresService = coloresService;
+        private readonly IControladorColores
+            _coloresService = coloresService;
 
-        //CRUD Colores
-        [HttpGet("FindaAllColores")]
-        public async Task<ActionResult<PaginationDto<Colores>>> FindaAllColores([FromQuery] QueryParams qParams)
+
+        // =========================================================
+        // LISTAR COLORES
+        // =========================================================
+
+        [HttpGet("FindAllColores")]
+        public async Task<
+            ActionResult<PaginationDto<Colores>>
+        > FindAllColores(
+            [FromQuery] QueryParams qParams
+        )
         {
-            PaginationDto<Colores> pagedResult = await _coloresService.AllColores(qParams);
+            PaginationDto<Colores> pagedResult =
+                await _coloresService
+                    .AllColores(qParams);
+
             return Ok(pagedResult);
         }
+
+
+        // =========================================================
+        // CREAR COLOR
+        // =========================================================
+
         [HttpPut("AddColor")]
-        public async Task<IActionResult> AddColor([FromBody] Colores Colores)
+        public async Task<IActionResult> AddColor(
+            [FromBody] Colores color
+        )
         {
-            string response = await _coloresService.CreateColor(Colores);
-            return response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response);
-        }
-        [HttpPost("UpdateColor")]
-        public async Task<ActionResult> UpdateColor([FromBody] Colores Colores)
-        {
-            string response = await _coloresService.UpdateColor(Colores);
-            return (ActionResult)(response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response));
+            string response =
+                await _coloresService
+                    .CreateColor(color);
+
+            return response == "Realizado"
+                ? Ok(response)
+                : InternalServerError(response);
         }
 
-        [HttpDelete("DeleteColor/{id}")]
-        public async Task<ActionResult> DeleteColor([FromRoute] Guid id)
+
+        // =========================================================
+        // ACTUALIZAR COLOR
+        // =========================================================
+
+        [HttpPost("UpdateColor")]
+        public async Task<IActionResult> UpdateColor(
+            [FromBody] Colores color
+        )
         {
-            string response = await _coloresService.DeleteColor(id);
-            return (ActionResult)(response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response));
+            string response =
+                await _coloresService
+                    .UpdateColor(color);
+
+            return response == "Realizado"
+                ? Ok(response)
+                : InternalServerError(response);
+        }
+
+
+        // =========================================================
+        // ELIMINAR COLOR
+        // =========================================================
+
+        [HttpDelete("DeleteColor/{id}")]
+        public async Task<IActionResult> DeleteColor(
+            [FromRoute] Guid id
+        )
+        {
+            string response =
+                await _coloresService
+                    .DeleteColor(id);
+
+            return response == "Realizado"
+                ? Ok(response)
+                : InternalServerError(response);
         }
     }
 }

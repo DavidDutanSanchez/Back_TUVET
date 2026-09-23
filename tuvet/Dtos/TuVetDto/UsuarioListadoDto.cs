@@ -1,6 +1,6 @@
-﻿namespace tu_vet_back.tuvet.Dtos.TuVetDto
+namespace tu_vet_back.tuvet.Dtos.TuVetDto
 {
-    public class UsuarioDto
+    public class UsuarioListadoDto
     {
         public Guid IdUsuario { get; set; }
 
@@ -10,19 +10,18 @@
 
         public bool Estado { get; set; }
 
-        public Guid Id_Persona { get; set; }
+        public Guid IdPersona { get; set; }
 
         public string? FotoPerfil { get; set; }
 
-        // Información de la persona
         public string Nombres { get; set; } = string.Empty;
 
         public string Apellidos { get; set; } = string.Empty;
 
         public string NumeroIdentificacion { get; set; } = string.Empty;
 
-        public string CorreoElectronico { get; set; } = string.Empty;
-
         public string Telefono { get; set; } = string.Empty;
+
+        public string CorreoElectronico { get; set; } = string.Empty;
     }
 }

@@ -1,42 +1,130 @@
 using Microsoft.AspNetCore.Mvc;
 using tu_vet_back.tuvet.Dtos;
 using tu_vet_back.tuvet.Interface;
-using tu_vet_back.tuvet.Model.Parameters;
-using tu_vet_back.tuvet.Model.TuVet;
 
 namespace tu_vet_back.tuvet.Controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ControladorServicios(IControladorServicios serviciosService) : SistecControllerBase
+    public class ControladorServicios(
+        IControladorServicios serviciosService)
+        : SistecControllerBase
     {
-        private readonly IControladorServicios _serviciosService = serviciosService;
+        private readonly IControladorServicios
+            _serviciosService =
+                serviciosService;
 
-        //CRUD Servicios
+
         [HttpGet("FindAllServicios")]
-        public async Task<ActionResult<PaginationDto<Servicios>>> FindAllServicios([FromQuery] QueryParams qParams)
+        public async Task<ActionResult<List<ServicioDto>>>
+            FindAllServicios(
+                [FromQuery]
+                bool soloActivos = false)
         {
-            PaginationDto<Servicios> pagedResult = await _serviciosService.AllServicios(qParams);
-            return Ok(pagedResult);
-        }
-        [HttpPut("AddServicio")]
-        public async Task<IActionResult> AddServicio([FromBody] Servicios servicios)
-        {
-            string response = await _serviciosService.CreateServicio(servicios);
-            return response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response);
-        }
-        [HttpPost("UpdateServicios")]
-        public async Task<ActionResult> UpdateServicios([FromBody] Servicios servicios)
-        {
-            string response = await _serviciosService.UpdateServicio(servicios);
-            return (ActionResult)(response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response));
+            List<ServicioDto> resultado =
+                await _serviciosService
+                    .FindAllServicios(
+                        soloActivos
+                    );
+
+            return Ok(resultado);
         }
 
-        [HttpDelete("DeleteServicios/{id}")]
-        public async Task<ActionResult> DeleteServicios([FromRoute] Guid id)
+
+        [HttpGet("FindServicioById/{id}")]
+        public async Task<IActionResult>
+            FindServicioById(
+                [FromRoute] Guid id)
         {
-            string response = await _serviciosService.DeleteServicio(id);
-            return (ActionResult)(response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response));
+            ServicioDto? resultado =
+                await _serviciosService
+                    .FindServicioById(id);
+
+
+            if (resultado == null)
+            {
+                return NotFound(
+                    new
+                    {
+                        success = false,
+                        message =
+                            "El servicio no existe."
+                    }
+                );
+            }
+
+
+            return Ok(resultado);
+        }
+
+
+        [HttpPut("AddServicio")]
+        public async Task<IActionResult>
+            AddServicio(
+                [FromBody]
+                GuardarServicioDto dto)
+        {
+            return Resultado(
+                await _serviciosService
+                    .CreateServicio(dto)
+            );
+        }
+
+
+        [HttpPost("UpdateServicio")]
+        public async Task<IActionResult>
+            UpdateServicio(
+                [FromBody]
+                GuardarServicioDto dto)
+        {
+            return Resultado(
+                await _serviciosService
+                    .UpdateServicio(dto)
+            );
+        }
+
+
+        [HttpPost("CambiarEstado/{id}")]
+        public async Task<IActionResult>
+            CambiarEstado(
+                [FromRoute] Guid id,
+                [FromQuery] bool activo)
+        {
+            return Resultado(
+                await _serviciosService
+                    .CambiarEstadoServicio(
+                        id,
+                        activo
+                    )
+            );
+        }
+
+
+        private IActionResult Resultado(
+            string response)
+        {
+            if (
+                response ==
+                "Realizado"
+            )
+            {
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        message = response
+                    }
+                );
+            }
+
+
+            return BadRequest(
+                new
+                {
+                    success = false,
+                    message = response
+                }
+            );
         }
     }
 }

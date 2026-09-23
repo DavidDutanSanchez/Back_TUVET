@@ -8,35 +8,90 @@ namespace tu_vet_back.tuvet.Controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CategoriasController(IControladorCategorias categoriasService) : SistecControllerBase
+    public class CategoriasController(
+        IControladorCategorias categoriasService
+    ) : SistecControllerBase
     {
-         private readonly IControladorCategorias _categoriasService = categoriasService;
+        private readonly IControladorCategorias _categoriasService =
+            categoriasService;
 
-        //CRUD Categorias
-        [HttpGet("FindaAllCategorias")]
-        public async Task<ActionResult<PaginationDto<Categorias>>> FindaAllCategorias([FromQuery] QueryParams qParams)
+
+        // =====================================================
+        // OBTENER CATEGORÍAS
+        // =====================================================
+
+        [HttpGet("FindAllCategorias")]
+        public async Task<ActionResult<PaginationDto<Categorias>>>
+            FindAllCategorias(
+                [FromQuery] QueryParams qParams
+            )
         {
-            PaginationDto<Categorias> pagedResult = await _categoriasService.AllCategorias(qParams);
+            PaginationDto<Categorias> pagedResult =
+                await _categoriasService.AllCategorias(
+                    qParams
+                );
+
             return Ok(pagedResult);
         }
+
+
+        // =====================================================
+        // CREAR CATEGORÍA
+        // =====================================================
+
         [HttpPut("AddCategorias")]
-        public async Task<IActionResult> AddCategorias([FromBody] Categorias categorias)
+        public async Task<IActionResult> AddCategorias(
+            [FromBody] Categorias categorias
+        )
         {
-            string response = await _categoriasService.CreateCategorias(categorias);
-            return response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response);
-        }
-        [HttpPost("UpdateCategorias")]
-        public async Task<ActionResult> UpdateCategorias([FromBody] Categorias categorias)
-        {
-            string response = await _categoriasService.UpdateCategorias(categorias);
-            return (ActionResult)(response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response));
+            string response =
+                await _categoriasService.CreateCategorias(
+                    categorias
+                );
+
+            return response == "Realizado"
+                ? Ok(response)
+                : InternalServerError(response);
         }
 
-        [HttpDelete("DeleteCategorias/{id}")]
-        public async Task<ActionResult> DeleteCategorias([FromRoute] Guid id)
+
+        // =====================================================
+        // ACTUALIZAR CATEGORÍA
+        // =====================================================
+
+        [HttpPost("UpdateCategorias")]
+        public async Task<IActionResult> UpdateCategorias(
+            [FromBody] Categorias categorias
+        )
         {
-            string response = await _categoriasService.DeleteCategorias(id);
-            return (ActionResult)(response == "Realizado" ? Ok(response) : (IActionResult)InternalServerError(response));
+            string response =
+                await _categoriasService.UpdateCategorias(
+                    categorias
+                );
+
+            return response == "Realizado"
+                ? Ok(response)
+                : InternalServerError(response);
+        }
+
+
+        // =====================================================
+        // ELIMINAR CATEGORÍA
+        // =====================================================
+
+        [HttpDelete("DeleteCategorias/{id}")]
+        public async Task<IActionResult> DeleteCategorias(
+            [FromRoute] Guid id
+        )
+        {
+            string response =
+                await _categoriasService.DeleteCategorias(
+                    id
+                );
+
+            return response == "Realizado"
+                ? Ok(response)
+                : InternalServerError(response);
         }
     }
 }
