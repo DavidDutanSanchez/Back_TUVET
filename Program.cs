@@ -1,19 +1,133 @@
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+
+using System.Security.Cryptography.X509Certificates;
+
 using tu_vet_back.tuvet.Context;
 using tu_vet_back.tuvet.Interface;
 using tu_vet_back.tuvet.Service;
+using tu_vet_back.tuvet.Interface;
+using tu_vet_back.tuvet.Service;
 
+
+// =========================================================
+// 1) CREAR BUILDER
+// =========================================================
 
 var builder = WebApplication.CreateBuilder(args);
 
 
 // =========================================================
-// 1) CONFIGURACIÓN DE LA CONEXIÓN A MYSQL
+// 2) CONFIGURACIÓN DEL CERTIFICADO HTTPS - TUVET
+// =========================================================
+
+// Certificado generado en Windows para TuVet.
+
+var thumbprint =
+    "4FA027954ABE1AEEFF480D7C55F94CA123F18B01";
+
+
+// Abrir almacén de certificados de Windows.
+
+using var store = new X509Store(
+    StoreName.My,
+    StoreLocation.LocalMachine
+);
+
+store.Open(OpenFlags.ReadOnly);
+
+
+// Buscar el certificado mediante su huella digital.
+
+var certificados = store.Certificates.Find(
+    X509FindType.FindByThumbprint,
+    thumbprint,
+    validOnly: false
+);
+
+
+// Validar que exista.
+
+if (certificados.Count == 0)
+{
+    throw new InvalidOperationException(
+        "No se encontró el certificado HTTPS de TuVet " +
+        "en el almacén de certificados de Windows."
+    );
+}
+
+
+// Obtener certificado.
+
+var certificado = certificados[0];
+
+
+// Verificar que tenga clave privada.
+
+if (!certificado.HasPrivateKey)
+{
+    throw new InvalidOperationException(
+        "El certificado HTTPS de TuVet " +
+        "no tiene clave privada."
+    );
+}
+
+
+// Verificar que todavía esté vigente.
+
+if (
+    DateTime.Now < certificado.NotBefore ||
+    DateTime.Now > certificado.NotAfter
+)
+{
+    throw new InvalidOperationException(
+        "El certificado HTTPS de TuVet " +
+        "no se encuentra dentro de su periodo de validez."
+    );
+}
+
+
+// =========================================================
+// 3) CONFIGURACIÓN KESTREL - HTTP Y HTTPS
+// =========================================================
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+
+    // -----------------------------------------------------
+    // HTTP - BACKEND ACTUAL
+    // -----------------------------------------------------
+
+    options.ListenAnyIP(5001);
+
+
+    // -----------------------------------------------------
+    // HTTPS - BACKEND TUVET
+    // -----------------------------------------------------
+
+    options.ListenAnyIP(
+        5002,
+        listenOptions =>
+        {
+            listenOptions.UseHttps(
+                certificado
+            );
+        }
+    );
+
+});
+
+
+// =========================================================
+// 4) CONFIGURACIÓN DE CONEXIÓN A MYSQL
 // =========================================================
 
 var connectionString =
-    builder.Configuration.GetConnectionString("TuVet");
+    builder.Configuration.GetConnectionString(
+        "TuVet"
+    );
+
 
 if (string.IsNullOrWhiteSpace(connectionString))
 {
@@ -22,87 +136,158 @@ if (string.IsNullOrWhiteSpace(connectionString))
     );
 }
 
-builder.Services.AddDbContext<TuVetContext>(options =>
-    options.UseMySQL(connectionString)
+
+// Registrar contexto de base de datos.
+
+builder.Services.AddDbContext<TuVetContext>(
+    options =>
+        options.UseMySQL(
+            connectionString
+        )
 );
 
 
 // =========================================================
-// 2) CONTROLLERS
+// 5) CONTROLLERS
 // =========================================================
 
 builder.Services.AddControllers();
 
 
 // =========================================================
-// 3) INYECCIÓN DE DEPENDENCIAS
+// 6) INYECCIÓN DE DEPENDENCIAS
 // =========================================================
 
+
+// ---------------------------------------------------------
 // PERSONAS
+// ---------------------------------------------------------
+
 builder.Services.AddScoped<
     IControladorPersonas,
     PersonasService
 >();
 
+
+// ---------------------------------------------------------
 // MASCOTAS
+// ---------------------------------------------------------
+
 builder.Services.AddScoped<
     IControladorMascotas,
     MascotasService
 >();
 
+
+// ---------------------------------------------------------
 // ESPECIES
+// ---------------------------------------------------------
+
 builder.Services.AddScoped<
     IControladorEspecies,
     EspeciesService
 >();
 
+
+// ---------------------------------------------------------
 // RAZAS
+// ---------------------------------------------------------
+
 builder.Services.AddScoped<
     IControladorRazas,
     RazaService
 >();
 
+
+// ---------------------------------------------------------
 // COLORES
+// ---------------------------------------------------------
+
 builder.Services.AddScoped<
     IControladorColores,
     ColoresService
 >();
 
+
+// ---------------------------------------------------------
 // PRODUCTOS
-// Tu clase actualmente se llama ProdcutosService.
+// ---------------------------------------------------------
+
+// Se conserva el nombre actual de tu clase.
+
 builder.Services.AddScoped<
     IControladorProductos,
     ProdcutosService
 >();
 
+
+// ---------------------------------------------------------
 // CATEGORÍAS
+// ---------------------------------------------------------
+
 builder.Services.AddScoped<
     IControladorCategorias,
     CategoriasService
 >();
+
+
+// ---------------------------------------------------------
+// SERVICIOS
+// ---------------------------------------------------------
 
 builder.Services.AddScoped<
     IControladorServicios,
     ServiciosService
 >();
 
+
+// ---------------------------------------------------------
+// CASAS COMERCIALES
+// ---------------------------------------------------------
+
 builder.Services.AddScoped<
     IControladorCasasComerciales,
     CasasComercialesService
 >();
+
+
+// ---------------------------------------------------------
+// AGENDAMIENTOS
+// ---------------------------------------------------------
 
 builder.Services.AddScoped<
     IControladorAgendamientos,
     AgendamientosService
 >();
 
-builder.Services.AddScoped<IControladorUsuario, UsuariosService>();
+
+// ---------------------------------------------------------
+// USUARIOS
+// ---------------------------------------------------------
+
+builder.Services.AddScoped<
+    IControladorUsuario,
+    UsuariosService
+>();
+
+
+builder.Services.AddScoped<
+    IControladorHistorialClinico,
+    HistorialClinicoService
+>();
+
+builder.Services.AddScoped<
+    IControladorHospitalizaciones,
+    HospitalizacionesService
+>();
+
 
 // =========================================================
-// 4) SWAGGER
+// 7) SWAGGER
 // =========================================================
 
 builder.Services.AddEndpointsApiExplorer();
+
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -111,7 +296,9 @@ builder.Services.AddSwaggerGen(options =>
         new OpenApiInfo
         {
             Title = "TuVet API",
+
             Version = "v1",
+
             Description =
                 "API para la gestión de la clínica veterinaria TuVet"
         }
@@ -120,14 +307,14 @@ builder.Services.AddSwaggerGen(options =>
 
 
 // =========================================================
-// 5) OPENAPI
+// 8) OPENAPI
 // =========================================================
 
 builder.Services.AddOpenApi();
 
 
 // =========================================================
-// 6) CORS
+// 9) CORS - FRONTEND LOCAL Y AZURE
 // =========================================================
 
 builder.Services.AddCors(options =>
@@ -137,7 +324,18 @@ builder.Services.AddCors(options =>
         policy =>
         {
             policy
-                .AllowAnyOrigin()
+                .WithOrigins(
+
+                    // React + Vite local
+                    "http://localhost:5173",
+
+                    // Vite Preview
+                    "http://localhost:4173",
+
+                    // Frontend oficial en Azure
+                    "https://tuvet-front-csfhenhmg3huemdf.westus-01.azurewebsites.net"
+
+                )
                 .AllowAnyHeader()
                 .AllowAnyMethod();
         }
@@ -146,17 +344,18 @@ builder.Services.AddCors(options =>
 
 
 // =========================================================
-// 7) CREAR APLICACIÓN
+// 10) CREAR APLICACIÓN
 // =========================================================
 
 var app = builder.Build();
 
 
 // =========================================================
-// 8) SWAGGER
+// 11) SWAGGER
 // =========================================================
 
 app.UseSwagger();
+
 
 app.UseSwaggerUI(options =>
 {
@@ -170,7 +369,7 @@ app.UseSwaggerUI(options =>
 
 
 // =========================================================
-// 9) OPENAPI EN DEVELOPMENT
+// 12) OPENAPI EN DESARROLLO
 // =========================================================
 
 if (app.Environment.IsDevelopment())
@@ -180,86 +379,95 @@ if (app.Environment.IsDevelopment())
 
 
 // =========================================================
-// 10) MIDDLEWARE
+// 13) MIDDLEWARE
 // =========================================================
 
 app.UseRouting();
 
-app.UseCors("AllowSpecificOrigin");
+
+// Permitir frontend local y Azure.
+
+app.UseCors(
+    "AllowSpecificOrigin"
+);
 
 
-// Cuando posteriormente agreguemos autenticación:
+// Si posteriormente implementas autenticación formal:
+//
 // app.UseAuthentication();
+//
 // app.UseAuthorization();
 
 
 // =========================================================
-// 11) CONTROLLERS
+// 14) MAPEAR CONTROLADORES
 // =========================================================
 
 app.MapControllers();
 
 
 // =========================================================
-// 12) PRUEBA DE CONEXIÓN A MYSQL
+// 15) PRUEBA DE CONEXIÓN MYSQL
 // =========================================================
 
-app.MapGet(
-    "/test-db",
-    async (TuVetContext context) =>
-    {
-        try
-        {
-            var conectado =
-                await context.Database.CanConnectAsync();
+// Endpoint de diagnóstico disponible únicamente
+// cuando el entorno es Development.
 
-            if (!conectado)
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet(
+        "/test-db",
+        async (TuVetContext context) =>
+        {
+            try
+            {
+                var conectado =
+                    await context.Database.CanConnectAsync();
+
+                if (!conectado)
+                {
+                    return Results.Problem(
+                        detail:
+                            "No se pudo conectar a la base de datos MySQL.",
+
+                        title:
+                            "Error de conexión"
+                    );
+                }
+
+                var cantidadPersonas =
+                    await context.Personas.CountAsync();
+
+                return Results.Ok(
+                    new
+                    {
+                        conexion = true,
+
+                        mensaje =
+                            "Conexión a MySQL correcta",
+
+                        personas =
+                            cantidadPersonas
+                    }
+                );
+            }
+            catch (Exception)
             {
                 return Results.Problem(
                     detail:
-                        "No se pudo conectar a la base de datos MySQL.",
+                        "No se pudo verificar la conexión a MySQL.",
+
                     title:
-                        "Error de conexión"
+                        "Error de conexión a MySQL"
                 );
             }
-
-            var cantidadPersonas =
-                await context.Personas.CountAsync();
-
-            return Results.Ok(
-                new
-                {
-                    conexion = true,
-                    mensaje =
-                        "Conexión a MySQL correcta",
-                    personas =
-                        cantidadPersonas
-                }
-            );
         }
-        catch (Exception ex)
-        {
-            return Results.Problem(
-                detail: ex.Message,
-                title:
-                    "Error de conexión a MySQL"
-            );
-        }
-    }
-);
+    );
+}
 
 
 // =========================================================
-// 13) PUERTO DE LA API
-// =========================================================
-
-app.Urls.Add(
-    "http://localhost:5151"
-);
-
-
-// =========================================================
-// 14) EJECUTAR APLICACIÓN
+// 16) INICIAR APLICACIÓN
 // =========================================================
 
 app.Run();
