@@ -37,8 +37,15 @@ namespace tu_vet_back.tuvet.Context
 
         public DbSet<CasasComerciales> CasasComerciales { get; set; }
 
-        public DbSet<AgendamientoRecordatorio>
-            AgendamientoRecordatorios { get; set; }
+        public DbSet<VentaCabecera> VentaCabeceras { get; set; }
+
+        public DbSet<VentaDetalle> VentaDetalles { get; set; }
+
+        public DbSet<VentaPago> VentaPagos { get; set; }
+
+        public DbSet<MovimientoInventario> MovimientosInventario { get; set; }
+
+        public DbSet<AgendamientoRecordatorio> AgendamientoRecordatorios { get; set; }
 
 
         // =====================================================
@@ -86,6 +93,36 @@ namespace tu_vet_back.tuvet.Context
                     typeof(TuVetContext).Assembly
                 );
 
+            
+                modelBuilder.Entity<VentaCabecera>(entity =>
+{
+    entity.ToTable("venta_cabecera");
+
+    entity.HasKey(x => x.IdVenta);
+});
+
+modelBuilder.Entity<VentaDetalle>(entity =>
+{
+    entity.ToTable("venta_detalle");
+
+    entity.HasKey(x => x.IdVentaDetalle);
+});
+
+modelBuilder.Entity<VentaPago>(entity =>
+{
+    entity.ToTable("venta_pagos");
+
+    entity.HasKey(x => x.IdVentaPago);
+});
+
+modelBuilder.Entity<MovimientoInventario>(entity =>
+{
+    entity.ToTable("movimientos_inventario");
+
+    entity.HasKey(
+        x => x.IdMovimientoInventario
+    );
+});
 
             // =================================================
             // HISTORIALES CLÍNICOS

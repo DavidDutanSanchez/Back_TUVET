@@ -282,6 +282,11 @@ builder.Services.AddScoped<
 >();
 
 
+builder.Services.AddScoped<
+    IControladorVentas,
+    VentasService
+>();
+
 // =========================================================
 // 7) SWAGGER
 // =========================================================
